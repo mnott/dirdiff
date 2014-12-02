@@ -333,7 +333,7 @@ args(){
   fi
 
   log ""
-  log Running $0 on platform $PLATFORM. Command line:
+  log Running $0 version $VERSION on platform $PLATFORM. Command line:
   log ""
   log $COMMANDLINE
   log ""
