@@ -86,7 +86,7 @@ PLATFORM=$(uname)
 # 
 COMMPARAMETERS=""
 
-if [[ "$PLATFORM" == "Linux" ]]; then
+if [[ "$PLATFORM" != "Darwin" ]]; then
   COMMPARAMETERS="--nocheck-order"
 fi
 
@@ -299,7 +299,7 @@ EOF
 ###################################################
 
 args(){
-  if [[ "$1" =~ ^((-{1,2})([Hh]$|[Hh][Ee][Ll][Pp])|)$ ]]; then
+  if [[ "$1" =~ ^\(\(-{1,2}\)\([Hh]$\|[Hh][Ee][Ll][Pp]\)\|\)$ ]]; then
     usage; exit 1
   else
     n=2;
