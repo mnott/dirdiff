@@ -12,6 +12,8 @@
 # 
 #  bash
 #  cd
+#  cp
+#  mv
 #  mkdir
 #  diff
 #  grep
@@ -105,43 +107,43 @@ COMMANDLINE="$0 $*"
 ###################################################
 
 main(){
-	# Parse Arguments
+  # Parse Arguments
   args "$@"
 
   # 
   # Check for input and output dirs
   #
   if [[ $ALL != "true" ]]; then
-  	if [[ ! -d "$DIRA" ]]; then
-  		echo Input Directory $DIRA not found.
-  		exit 1;
-  	fi
-  	if [[ ! -d "$DIRB" ]]; then
-  		echo Input Directory $DIRB not found.
-  		exit 1;
-  	fi
+    if [[ ! -d "$DIRA" ]]; then
+      echo Input Directory $DIRA not found.
+      exit 1;
+    fi
+    if [[ ! -d "$DIRB" ]]; then
+      echo Input Directory $DIRB not found.
+      exit 1;
+    fi
   fi
 
   #
   # Make output directory if needed
   #
   if [[ ! -d "$TARGET" ]]; then
-  	log Making directory $TARGET
-  	mkdir "$TARGET";
+    log Making directory $TARGET
+    mkdir "$TARGET";
   else
-  	log Directory $TARGET already exists, overwriting.
+    log Directory $TARGET already exists, overwriting.
   fi
 
   if [[ $ALL == "true" ]]; then
-  	p="";
-  	for f in *; do
-  		if [[ -d "$f" ]] && [[ "$f" != "$TARGET" ]] && [[ "$f" =~ $DIRPATTERN ]]; then
-  			if [[ "$p" != "" ]]; then
-  				_diff "$p" "$f";
-  			fi
-  			p="$f";
-  		fi
-  	done
+    p="";
+    for f in *; do
+      if [[ -d "$f" ]] && [[ "$f" != "$TARGET" ]] && [[ "$f" =~ $DIRPATTERN ]]; then
+        if [[ "$p" != "" ]]; then
+          _diff "$p" "$f";
+        fi
+        p="$f";
+      fi
+    done
   else
     _diff "$DIRA" "$DIRB"
   fi
@@ -168,7 +170,7 @@ _diff() {
   log Comparing $FIRST with $SECOND
 
   if [[ ! -d "$TARGET/$SECOND" ]]; then
-  	mkdir "$TARGET/$SECOND";
+    mkdir "$TARGET/$SECOND";
   fi
 
   # Copy over files that were newly created
@@ -179,10 +181,10 @@ _diff() {
 
   # If needed, combine
   if [[ $COMBINE == "true" ]]; then
-  	(
-  		cd "$TARGET/$SECOND"
-  		# Assumptions:
-  		# 
+    (
+      cd "$TARGET/$SECOND"
+      # Assumptions:
+      # 
       # Procedure: We enter each target directory and look at each file that is
       # a file and not the combined file and corresponds to the file pattern.
       # This file we assume to have a file name that has an important part at
@@ -196,21 +198,21 @@ _diff() {
       # We could make the "important part" pattern of the filename configurable,
       # and likewise the structure of the lines, for our purpose, this very much
       # nails it.
-  		# 
-			for i in * ; do 
-				if [[ -f "$i" ]] && [[ "$i" =~ $FILEPATTERN ]]; then 
-					export p=$(
-						echo $i \
-						| sed -e "s/\([^_]*\)_.*/\1/"
-					);
-	  			cat "$i" \
-	  			| grep -P "^\d\d\d\d/\d\d/\d\d.*" \
-	  			| sed -e "s/\([^|]*\)\(.*\)/\1|$p\2/";
-	  		fi
-	 		done \
+      # 
+      for i in * ; do 
+        if [[ -f "$i" ]] && [[ "$i" =~ $FILEPATTERN ]]; then 
+          export p=$(
+            echo $i \
+            | sed -e "s/\([^_]*\)_.*/\1/"
+          );
+          cat "$i" \
+          | grep -P "^\d\d\d\d/\d\d/\d\d.*" \
+          | sed -e "s/\([^|]*\)\(.*\)/\1|$p\2/";
+        fi
+       done \
       | grep -v -P "$EXCLUDEPATTERN" \
       | sort >"../${SECOND}_$COMBINEDFILE"
-  	)
+    )
   fi
 }
 
@@ -300,21 +302,21 @@ args(){
   if [[ "$1" =~ ^((-{1,2})([Hh]$|[Hh][Ee][Ll][Pp])|)$ ]]; then
     usage; exit 1
   else
-  	n=2;
-  	if [[ "$*" =~ "-a" ]]; then n=0; fi # Prescan for detecting -a
+    n=2;
+    if [[ "$*" =~ "-a" ]]; then n=0; fi # Prescan for detecting -a
     while [[ $# -gt $n ]]; do
       opt="$1"
       case "$opt" in
-      	"") if [[ $# -eq 2 ]]; then break; fi;;
+        "") if [[ $# -eq 2 ]]; then break; fi;;
         "-a"|"--all"           ) opt="ALL";            export ${opt}="true"; shift;;
-				"-t"|"--target"        ) opt="TARGET";         export ${opt}=${2%/}; shift; shift;;
+        "-t"|"--target"        ) opt="TARGET";         export ${opt}=${2%/}; shift; shift;;
         "-c"|"--combine"       ) opt="COMBINE";        export ${opt}="true"; shift;;
         "-e"|"--exclude"       ) opt="EXCLUDEPATTERN"; export ${opt}="$2"; shift; shift;;
         "-v"|"--verbose"       ) opt="VERBOSE";        export ${opt}="true"; shift;;
         "-l"|"--logfile"       ) opt="LOGFILE";        export ${opt}="$2"; shift; shift;;
-				"-dp"|"--dirpattern"   ) opt="DIRPATTERN";     export ${opt}="$2"; shift; shift;;
-				"-fp"|"--filepattern"  ) opt="FILEPATTERN";    export ${opt}="$2"; shift; shift;;
-				"-cf"|"--combinedfile" ) opt="COMBINEDFILE";   export ${opt}="$2"; shift; shift;;
+        "-dp"|"--dirpattern"   ) opt="DIRPATTERN";     export ${opt}="$2"; shift; shift;;
+        "-fp"|"--filepattern"  ) opt="FILEPATTERN";    export ${opt}="$2"; shift; shift;;
+        "-cf"|"--combinedfile" ) opt="COMBINEDFILE";   export ${opt}="$2"; shift; shift;;
           *                    ) echo "ERROR: Invalid option: \""$opt"\"" >&2; usage; exit 1;;
       esac
     done
@@ -322,8 +324,8 @@ args(){
   if [[ "$ALL" != "true" ]] && [[ $# -lt 2 ]] || [[ "$1" == -* ]] || [[ "$2" == -* ]]; then
     usage; exit 1
   else
-  	DIRA=${1%/}
-  	DIRB=${2%/}
+    DIRA=${1%/}
+    DIRB=${2%/}
   fi
 
   if [[ -f "$LOGFILE" ]]; then
@@ -361,9 +363,9 @@ args(){
 ###################################################
 
 log() {
-	if [[ $VERBOSE == "true" ]]; then
-		echo "${*}"
-	fi
+  if [[ $VERBOSE == "true" ]]; then
+    echo "${*}"
+  fi
   echo "${*}" >>"$LOGFILE"
 }
 
