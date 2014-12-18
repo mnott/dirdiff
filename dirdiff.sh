@@ -20,6 +20,7 @@
 #  sed
 #  comm
 #  sort
+#  xargs
 #   
 ###################################################
 # (c) Matthias Nott, SAP. Licensed under WFTPL.
@@ -33,7 +34,7 @@ LANG=C
 #
 ####################################################
 
-VERSION=1.0
+VERSION=1.1
 
 
 ###################################################
@@ -72,6 +73,16 @@ COMBINEDFILE="combined.txt"
 #
 LOGFILE=log.txt
 
+#
+# Start of timestamp column
+# 
+export TSSTART=1
+
+#
+# End of timestamp column
+# 
+export TSEND=23
+
 
 ###################################################
 #
@@ -82,12 +93,15 @@ LOGFILE=log.txt
 PLATFORM=$(uname)
 
 #
-# comm wants --nocheck-order on Linux
+# comm wants --nocheck-order except on Mac
 # 
 COMMPARAMETERS=""
 
 if [[ "$PLATFORM" != "Darwin" ]]; then
   COMMPARAMETERS="--nocheck-order"
+  XARGSPARAMETERS="-i"
+else
+  XARGSPARAMETERS="-I {}"
 fi
 
 
@@ -174,7 +188,7 @@ _diff() {
   fi
 
   # Copy over files that were newly created
-  diff -rquw "$FIRST" "$SECOND" | grep -i -E "^Only in" | sed -e "s/^Only in.*: \(.*\)$/\"\1\"/"|xargs -I {} -L 1 cp "$SECOND/"{} "$TARGET/$SECOND" 2>/dev/null
+  diff -rquw "$FIRST" "$SECOND" | grep -i -E "^Only in" | sed -e "s/^Only in.*: \(.*\)$/\"\1\"/"|xargs $XARGSPARAMETERS cp "$SECOND/"{} "$TARGET/$SECOND" 2>/dev/null
 
   # Copy over additions to existing files
   for i in $(diff -wuq "$FIRST" "$SECOND" | grep -i -E "^Files.*differ$" | sed -e "s/^Files $FIRST\/\(.*\) and .*/\1/"); do comm $COMMPARAMETERS -13 "$FIRST/$i" "$SECOND/$i" > "$TARGET/$SECOND/$i" ; done
@@ -207,7 +221,7 @@ _diff() {
           );
           cat "$i" \
           | grep -P "^\d\d\d\d/\d\d/\d\d.*" \
-          | awk 'BEGIN{s=0} {l=substr($0,1,23);r=substr($0,24);printf "%s|%10d|%s%s\n",l,++s,ENVIRON["p"],r}';
+          | awk 'BEGIN{s=0}{l=substr($0,ENVIRON["TSSTART"],ENVIRON["TSEND"]);r=substr($0,ENVIRON["TSEND"]+1);printf "%s|%10d|%s%s\n",l,++s,ENVIRON["p"],r}';
         fi
        done \
       | grep -v -P "$EXCLUDEPATTERN" \
@@ -232,7 +246,8 @@ It compares two directories,  dira and dirb,  and records their differences
 into a directory diffs/dirb. Differences are either new files that appeared
 in directory dirb which  had not yet been in dira, or lines in files  which
 have been  added to  files in directory  dira. Optionally,  the program can
-create a common file sorted by timestamp.
+create a common file sorted by timestamp. If you want to diff, later,  what
+the program generated on Cygwin vs. Linux or Mac, use diff -w.
 
 Usage: $0 [options] dira dirb
 
@@ -245,6 +260,8 @@ Usage: $0 [options] dira dirb
 -l | --logfile      : Logfile to use (default: log.txt)
 -dp| --dirpattern   : Pattern of directories to compare (default: ".*")
 -fp| --filepattern  : Pattern of files to combine (default: ".*")
+-ts| --tsstart      : Start of timestamp column (default: 1)
+-te| --tsend        : End of timestamp column (default: 23)
 
 Examples:
 
@@ -316,7 +333,8 @@ args(){
         "-l"|"--logfile"       ) opt="LOGFILE";        export ${opt}="$2"; shift; shift;;
         "-dp"|"--dirpattern"   ) opt="DIRPATTERN";     export ${opt}="$2"; shift; shift;;
         "-fp"|"--filepattern"  ) opt="FILEPATTERN";    export ${opt}="$2"; shift; shift;;
-        "-cf"|"--combinedfile" ) opt="COMBINEDFILE";   export ${opt}="$2"; shift; shift;;
+        "-ts"|"--tsstart"      ) opt="TSSTART";        export ${opt}="$2"; shift; shift;;
+        "-te"|"--tsend"        ) opt="TSEND";          export ${opt}="$2"; shift; shift;;
           *                    ) echo "ERROR: Invalid option: \""$opt"\"" >&2; usage; exit 1;;
       esac
     done
@@ -352,6 +370,8 @@ args(){
   log "combinedfile: $COMBINEDFILE"
   log "verbose     : $VERBOSE"
   log "logfile     : $LOGFILE"
+  log "ts start    : $TSSTART"
+  log "ts end      : $TSEND"
   log ""
 }
 
