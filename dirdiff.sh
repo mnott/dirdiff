@@ -174,7 +174,7 @@ _diff() {
   fi
 
   # Copy over files that were newly created
-  for i in $(diff -rquw "$FIRST" "$SECOND" | grep -i -E "^Only in" | sed -e "s/^Only in.*: \(.*\)/\1/"); do cp "$SECOND/$i" "$TARGET/$SECOND"; done
+  diff -rquw "$FIRST" "$SECOND" | grep -i -E "^Only in" | sed -e "s/^Only in.*: \(.*\)$/\"\1\"/"|xargs -I {} -L 1 cp "$SECOND/"{} "$TARGET/$SECOND" 2>/dev/null
 
   # Copy over additions to existing files
   for i in $(diff -wuq "$FIRST" "$SECOND" | grep -i -E "^Files.*differ$" | sed -e "s/^Files $FIRST\/\(.*\) and .*/\1/"); do comm $COMMPARAMETERS -13 "$FIRST/$i" "$SECOND/$i" > "$TARGET/$SECOND/$i" ; done
@@ -207,11 +207,11 @@ _diff() {
           );
           cat "$i" \
           | grep -P "^\d\d\d\d/\d\d/\d\d.*" \
-          | sed -e "s/\([^|]*\)\(.*\)/\1|$p\2/";
+          | awk 'BEGIN{s=0} {l=substr($0,1,23);r=substr($0,24);printf "%s|%10d|%s%s\n",l,++s,ENVIRON["p"],r}';
         fi
        done \
       | grep -v -P "$EXCLUDEPATTERN" \
-      | sort >"../${SECOND}_$COMBINEDFILE"
+      | sort | cut -d"|" -f1,3- >"../${SECOND}_$COMBINEDFILE"
     )
   fi
 }
